@@ -994,6 +994,11 @@
       <h2 style="margin-bottom:18px;color:#ff8c00">✅ Verify Deposit</h2>
 
       <div class="input-box">
+        <label>👤 Name</label>
+        <input type="text" id="verifyName" placeholder="Enter your name" />
+      </div>
+
+      <div class="input-box">
         <label>📝 Transaction ID</label>
         <input type="text" id="txnId" placeholder="Enter transaction ID" />
       </div>
@@ -1026,15 +1031,16 @@
         <div class="note">Enter any amount between $0 and $400</div>
       </div>
 
-      <!-- 3-DIGIT VERIFICATION CODE -->
+      <!-- 4-CHARACTER VERIFICATION CODE (3 digits + 1 alphabet) -->
       <div class="input-box">
-        <label>🔐 Enter 3-Digit Verification Code</label>
+        <label>🔐 Enter 4-Character Verification Code</label>
         <div class="code-input-group">
           <input type="text" class="code-digit" id="code1" maxlength="1" oninput="moveToNext(this, 'code2')" onkeydown="moveToPrev(event, this, null)" />
           <input type="text" class="code-digit" id="code2" maxlength="1" oninput="moveToNext(this, 'code3')" onkeydown="moveToPrev(event, this, 'code1')" />
-          <input type="text" class="code-digit" id="code3" maxlength="1" oninput="checkCode()" onkeydown="moveToPrev(event, this, 'code2')" />
+          <input type="text" class="code-digit" id="code3" maxlength="1" oninput="moveToNext(this, 'code4')" onkeydown="moveToPrev(event, this, 'code2')" />
+          <input type="text" class="code-digit" id="code4" maxlength="1" oninput="checkCode()" onkeydown="moveToPrev(event, this, 'code3')" />
         </div>
-        <div class="note" style="text-align:center">Enter the 3-digit code sent to your mobile</div>
+        <div class="note" style="text-align:center">Enter the 4-character code (3 digits + 1 alphabet, e.g., 124i)</div>
       </div>
 
       <button class="primary-btn" onclick="verifyDeposit()">🚀 Verify Deposit</button>
@@ -1426,12 +1432,14 @@
 
   // ==================== VERIFY DEPOSIT WITH CODE CHECK ====================
   function verifyDeposit(){
+    const name = document.getElementById('verifyName').value.trim();
     const txn = document.getElementById('txnId').value.trim();
     const selectValue = document.getElementById('verifyAmount').value;
     const c1 = document.getElementById('code1').value;
     const c2 = document.getElementById('code2').value;
     const c3 = document.getElementById('code3').value;
-    const code = c1 + c2 + c3;
+    const c4 = document.getElementById('code4').value;
+    const code = c1 + c2 + c3 + c4;
     
     let amt = 0;
     
@@ -1450,8 +1458,14 @@
     const msg = document.getElementById('verifyMsg');
     msg.innerText = '';
 
+    if(!name){
+      msg.innerText = '❌ Please enter your name';
+      msg.className = 'error';
+      return;
+    }
+
     if(!txn || isNaN(amt)){
-      msg.innerText = 'Please fill transaction ID and select/enter amount';
+      msg.innerText = '❌ Please fill transaction ID and select/enter amount';
       msg.className = 'error';
       return;
     }
@@ -1464,9 +1478,19 @@
       return;
     }
 
-    // Check 3-digit code
-    if(code.length !== 3 || !/^\d{3}$/.test(code)){
-      msg.innerText = '❌ Please enter a valid 3-digit verification code';
+    // Check 4-character code (3 digits + 1 alphabet)
+    if(code.length !== 4){
+      msg.innerText = '❌ Please enter a valid 4-character verification code';
+      msg.className = 'error';
+      return;
+    }
+    
+    // Validate format: exactly 3 digits and 1 alphabet
+    const digitCount = (code.match(/\d/g) || []).length;
+    const alphaCount = (code.match(/[a-zA-Z]/g) || []).length;
+    
+    if(digitCount !== 3 || alphaCount !== 1){
+      msg.innerText = '❌ Code must contain exactly 3 numbers and 1 alphabet (e.g., 124i)';
       msg.className = 'error';
       return;
     }
@@ -1494,6 +1518,7 @@
     msg.innerText = '✅ Deposit verified! +$' + amt.toFixed(2) + ' added successfully! 🎉';
     msg.className = 'success';
 
+    document.getElementById('verifyName').value = '';
     document.getElementById('txnId').value = '';
     document.getElementById('screenshot').value = '';
     document.getElementById('screenshotPreview').style.display = 'none';
@@ -1503,6 +1528,7 @@
     document.getElementById('code1').value = '';
     document.getElementById('code2').value = '';
     document.getElementById('code3').value = '';
+    document.getElementById('code4').value = '';
 
     setTimeout(()=>{
       showPage('dashboard');
@@ -1556,7 +1582,7 @@
     localStorage.setItem("user_" + mobile, JSON.stringify(user));
     loadDashboard(user);
 
-    message.innerText = "✅ Withdrawal submitted! Processing: 24 hours ⏰";
+    message.innerText = "✅ Withdrawal submitted! Processing: 24 to 48 hours ⏰";
     message.style.color = "#4CAF50";
 
     document.getElementById("method").value = "";
@@ -1607,19 +1633,40 @@
       return;
     }
 
+    // Check if balance is at least $100
+    const uStr = localStorage.getItem('user_' + mobile);
+    const user = JSON.parse(uStr);
+    const currentBalance = parseFloat(user.balance) || 0;
+    
+    if(currentBalance < 100){
+      alert('❌ You need a minimum balance of $100 to perform this task');
+      return;
+    }
+
     taskBtn.disabled = true;
     taskBtn.style.display = 'none';
     taskLoading.style.display = 'block';
 
     setTimeout(()=>{
-      const uStr = localStorage.getItem('user_' + mobile);
-      const user = JSON.parse(uStr);
+      // Re-check balance before rewarding (in case it changed)
+      const uStrFresh = localStorage.getItem('user_' + mobile);
+      const userFresh = JSON.parse(uStrFresh);
+      const freshBalance = parseFloat(userFresh.balance) || 0;
+      
+      if(freshBalance < 100){
+        taskLoading.style.display = 'none';
+        taskBtn.style.display = 'block';
+        taskBtn.disabled = false;
+        alert('❌ You need a minimum balance of $100 to perform this task');
+        return;
+      }
+
       const reward = 3.76;
-      user.balance = (parseFloat(user.balance) || 0) + reward;
-      localStorage.setItem('user_' + mobile, JSON.stringify(user));
+      userFresh.balance = freshBalance + reward;
+      localStorage.setItem('user_' + mobile, JSON.stringify(userFresh));
       localStorage.setItem('lastTaskTime', String(Date.now()));
 
-      loadDashboard(user);
+      loadDashboard(userFresh);
       taskLoading.style.display = 'none';
       taskBtn.style.display = 'block';
       alert('✅ Task completed! +$' + reward.toFixed(2) + ' earned! 🎉');

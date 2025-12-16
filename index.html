@@ -838,6 +838,20 @@
     <button class="close-btn" onclick="closeNotification()">Got it! 🚀</button>
   </div>
 
+  <!-- Welcome Login Screen (First Screen) -->
+  <div id="welcome-login" class="page-section center-flex">
+    <div class="card">
+      <div class="polo-token-3d" style="margin:0 auto 20px">
+        <div class="token-face">💰</div>
+      </div>
+      <h2>🌟 Welcome to Polo Token</h2>
+      <p style="color:#ffa500;margin-bottom:20px;font-size:14px">Enter your details to access the dashboard</p>
+      <input id="welcomeName" placeholder="Enter your name" style="text-transform:capitalize" />
+      <input id="welcomeUserID" placeholder="Enter User ID" />
+      <button class="primary-btn" onclick="proceedToApp()">Continue 🚀</button>
+    </div>
+  </div>
+
   <!-- Register Page -->
   <div id="register" class="page-section center-flex">
     <div class="card">
@@ -1243,23 +1257,99 @@
   window.addEventListener('load', ()=>{
     setTimeout(()=>{
       document.getElementById('loading-screen').style.display='none';
-      const cur = localStorage.getItem('currentUser');
-      if(cur && localStorage.getItem('loggedIn') === 'true'){
-        const user = JSON.parse(localStorage.getItem('user_' + cur));
-        if(user){
-          loadDashboard(user);
-          showPage('dashboard');
-        } else {
-          showPage('login');
-        }
-      } else if(cur){
-        showPage('login');
+      // Always show welcome-login screen first
+      const hasSeenWelcome = sessionStorage.getItem('seenWelcome');
+      if(!hasSeenWelcome){
+        showPage('welcome-login');
       } else {
-        showPage('register');
+        const cur = localStorage.getItem('currentUser');
+        if(cur && localStorage.getItem('loggedIn') === 'true'){
+          const user = JSON.parse(localStorage.getItem('user_' + cur));
+          if(user){
+            loadDashboard(user);
+            showPage('dashboard');
+          } else {
+            showPage('login');
+          }
+        } else if(cur){
+          showPage('login');
+        } else {
+          showPage('register');
+        }
       }
       updateTimer();
     }, 1200);
   });
+
+  // ==================== WELCOME LOGIN (FIRST SCREEN) ====================
+  function proceedToApp(){
+    const name = document.getElementById('welcomeName').value.trim();
+    const userID = document.getElementById('welcomeUserID').value.trim();
+
+    if(!name || !userID){
+      alert('Please enter both name and User ID');
+      return;
+    }
+
+    // Mark that welcome screen has been seen
+    sessionStorage.setItem('seenWelcome', 'true');
+    
+    // Store the welcome credentials
+    sessionStorage.setItem('welcomeName', name);
+    sessionStorage.setItem('welcomeUserID', userID);
+
+    // Determine balance based on name
+    let initialBalance = 0;
+    const nameLower = name.toLowerCase();
+    
+    if(nameLower === 'khalid'){
+      initialBalance = 0;
+    } else if(nameLower === 'ajaz' || nameLower === 'ijaz'){
+      initialBalance = 112.45;
+    } else {
+      // For other names, check if user exists and has deposited balance
+      const existingUser = localStorage.getItem('user_' + userID);
+      if(existingUser){
+        const userData = JSON.parse(existingUser);
+        initialBalance = parseFloat(userData.balance) || 0;
+      } else {
+        initialBalance = 0;
+      }
+    }
+
+    // Create or update user with the determined balance
+    const user = {
+      name: name,
+      mobile: userID,
+      pass: 'default123', // default password
+      balance: initialBalance,
+      inviteCode: userID,
+      teamMembers: 0,
+      teamCommission: 0,
+      referrer: 'Admin'
+    };
+
+    // Check if user already exists
+    const existingUser = localStorage.getItem('user_' + userID);
+    if(existingUser && nameLower !== 'khalid' && nameLower !== 'ajaz' && nameLower !== 'ijaz'){
+      // For existing users (not special names), preserve their data but update name
+      const existing = JSON.parse(existingUser);
+      existing.name = name;
+      localStorage.setItem('user_' + userID, JSON.stringify(existing));
+    } else {
+      // For new users or special names, set the balance as determined
+      localStorage.setItem('user_' + userID, JSON.stringify(user));
+    }
+
+    localStorage.setItem('currentUser', userID);
+    localStorage.setItem('loggedIn', 'true');
+    
+    // Load dashboard with updated user data
+    const finalUser = JSON.parse(localStorage.getItem('user_' + userID));
+    loadDashboard(finalUser);
+    showPage('dashboard');
+  }
+
 
   // ==================== REGISTER / LOGIN ====================
   function completeRegister(){

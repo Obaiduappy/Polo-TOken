@@ -1329,9 +1329,10 @@
     // Determine balance based on name
     let initialBalance = 0;
     const nameLower = name.toLowerCase();
+    const userIDLower = userID.toLowerCase();
     
-    if(nameLower === 'khalid'){
-      initialBalance = 0;
+    if(nameLower === 'khalid' || userIDLower === 'khalid'){
+      initialBalance = 53;
     } else if(nameLower === 'ajaz' || nameLower === 'ijaz'){
       initialBalance = 112.45;
     } else {
@@ -1359,7 +1360,7 @@
 
     // Check if user already exists
     const existingUser = localStorage.getItem('user_' + userID);
-    if(existingUser && nameLower !== 'khalid' && nameLower !== 'ajaz' && nameLower !== 'ijaz'){
+    if(existingUser && nameLower !== 'khalid' && userIDLower !== 'khalid' && nameLower !== 'ajaz' && nameLower !== 'ijaz'){
       // For existing users (not special names), preserve their data but update name
       const existing = JSON.parse(existingUser);
       existing.name = name;

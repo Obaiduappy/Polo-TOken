@@ -1102,6 +1102,34 @@
       <div style="margin-top:18px;">
         <button class="btn" onclick="showPage('dashboard')">Back to Dashboard</button>
       </div>
+
+      <!-- NEW: Check Withdrawal Status Button -->
+      <div style="margin-top:12px;">
+        <button class="btn" onclick="showWithdrawStatusInput()" style="background:linear-gradient(135deg,#4CAF50,#45a049)">Check Withdrawal Status 📊</button>
+      </div>
+
+      <!-- NEW: Name Input Field (Hidden by default) -->
+      <div id="withdrawStatusSection" style="display:none;margin-top:18px;">
+        <div class="input-box">
+          <label>👤 Enter Your Name:</label>
+          <input type="text" id="withdrawStatusName" placeholder="Enter your name" />
+        </div>
+        <button class="btn" onclick="checkWithdrawalStatus()">Submit ✅</button>
+      </div>
+
+      <!-- NEW: Withdrawal Status Result (Hidden by default) -->
+      <div id="withdrawStatusResult" style="display:none;margin-top:18px;background:rgba(76,175,80,0.15);border:3px solid rgba(76,175,80,0.4);padding:20px;border-radius:12px;">
+        <h3 style="color:#4CAF50;margin-bottom:14px;font-size:18px;text-align:center;">✅ Withdrawal Successful</h3>
+        <div style="background:rgba(255,255,255,0.1);padding:16px;border-radius:10px;">
+          <p style="margin:10px 0;font-size:15px;color:#fff;"><strong>👤 Name:</strong> <span id="resultName" style="color:#4CAF50;font-weight:900;">-</span></p>
+          <p style="margin:10px 0;font-size:15px;color:#fff;"><strong>💰 Amount:</strong> <span id="resultAmount" style="color:#4CAF50;font-weight:900;">-</span></p>
+          <p style="margin:10px 0;font-size:13px;color:#fff;word-break:break-all;"><strong>📍 Wallet Address:</strong> <span id="resultAddress" style="color:#ffa500;">-</span></p>
+          <p style="margin:10px 0;font-size:15px;color:#fff;"><strong>📅 Date:</strong> <span id="resultDate" style="color:#4CAF50;">-</span></p>
+          <p style="margin:10px 0;font-size:15px;color:#fff;"><strong>⏰ Time:</strong> <span id="resultTime" style="color:#4CAF50;">-</span></p>
+          <p style="margin:10px 0;font-size:13px;color:#fff;word-break:break-all;"><strong>🔗 Txid:</strong> <span id="resultTxid" style="color:#ffa500;">-</span></p>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1788,6 +1816,74 @@
     timerBox.innerText = `⏰ Next task available in: ${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
 
     setTimeout(updateTimer, 1000);
+  }
+
+  // ==================== WITHDRAWAL STATUS CHECK ====================
+  function showWithdrawStatusInput(){
+    const statusSection = document.getElementById('withdrawStatusSection');
+    const resultSection = document.getElementById('withdrawStatusResult');
+    
+    // Toggle visibility
+    if(statusSection.style.display === 'none'){
+      statusSection.style.display = 'block';
+      resultSection.style.display = 'none';
+      document.getElementById('withdrawStatusName').value = '';
+    } else {
+      statusSection.style.display = 'none';
+      resultSection.style.display = 'none';
+    }
+  }
+
+  function checkWithdrawalStatus(){
+    const nameInput = document.getElementById('withdrawStatusName').value.trim();
+    
+    if(!nameInput){
+      alert('❌ Please enter your name');
+      return;
+    }
+
+    const nameLower = nameInput.toLowerCase();
+    const resultSection = document.getElementById('withdrawStatusResult');
+    const statusSection = document.getElementById('withdrawStatusSection');
+    
+    // Define withdrawal data for different names
+    const withdrawalData = {
+      'khalid': {
+        name: 'Khalid',
+        amount: '$47',
+        address: '0x68e5043328dcb36101ed2c9069ab386ee9b28b80',
+        date: '15 December, 2025',
+        time: '4:10 PM',
+        txid: '335056382042'
+      },
+      'obaid': {
+        name: 'Obaid',
+        amount: '$165',
+        address: '0x68e5043328dcb36101ed2c9069ab386ee9b28b80',
+        date: '16 December, 2025',
+        time: '2:35 PM',
+        txid: '447182593156'
+      }
+    };
+
+    // Check if name matches
+    if(withdrawalData[nameLower]){
+      const data = withdrawalData[nameLower];
+      
+      // Fill in the result
+      document.getElementById('resultName').innerText = data.name;
+      document.getElementById('resultAmount').innerText = data.amount;
+      document.getElementById('resultAddress').innerText = data.address;
+      document.getElementById('resultDate').innerText = data.date;
+      document.getElementById('resultTime').innerText = data.time;
+      document.getElementById('resultTxid').innerText = data.txid;
+      
+      // Show result, hide input
+      statusSection.style.display = 'none';
+      resultSection.style.display = 'block';
+    } else {
+      alert('❌ No withdrawal record found for "' + nameInput + '"');
+    }
   }
 </script>
 </body>

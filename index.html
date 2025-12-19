@@ -593,7 +593,7 @@
     .bottom-nav{
       background:linear-gradient(135deg,#1a0a00,#ff6b00);
       display:grid;
-      grid-template-columns:repeat(4,1fr);
+      grid-template-columns:repeat(5,1fr);
       padding:12px 0;
       margin-top:auto;
       box-shadow:0 -4px 20px rgba(255,140,0,0.4);
@@ -834,6 +834,13 @@
       <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.3)">
       <div>🎉 <strong>Party Reward | Note: When Your Section B has 4 Members, You Receive The Bonus of Party:</strong> $176</div>
       <div>🎁 <strong>Referral Bonus:</strong> $11</div>
+      <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.3)">
+      <div style="font-size:14px;line-height:1.8;margin-top:10px">
+        <div style="color:#ffd700;font-weight:900;margin-bottom:8px">🆕 NEW KYC UPDATE - 18 December 2024</div>
+        <div style="color:#fff">⚠️ <strong>IMPORTANT:</strong> New KYC verification is now mandatory!</div>
+        <div style="color:#fff">⏰ You must complete KYC within <strong style="color:#ffd700">48 hours</strong></div>
+        <div style="color:#fff">🚫 Until KYC is completed, withdrawals are disabled</div>
+      </div>
     </div>
     <button class="close-btn" onclick="closeNotification()">Got it! 🚀</button>
   </div>
@@ -967,6 +974,10 @@
         <button class="nav-item" onclick="loadTeamPage();showPage('team')">
           <div class="nav-icon">👥</div>
           <div>Team</div>
+        </button>
+        <button class="nav-item" onclick="showPage('kyc')">
+          <div class="nav-icon">🆔</div>
+          <div>KYC</div>
         </button>
       </div>
     </div>
@@ -1130,6 +1141,70 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- KYC Page -->
+  <div id="kyc" class="page-section center-flex">
+    <div class="container" style="text-align:left">
+      <h2 style="margin-bottom:18px;color:#ff8c00">🆔 KYC Verification</h2>
+      
+      <div style="background:rgba(255,140,0,0.15);border:3px solid rgba(255,140,0,0.4);padding:18px;border-radius:12px;margin-bottom:18px">
+        <div style="color:#ffd700;font-weight:900;margin-bottom:10px;font-size:16px">🆕 NEW KYC UPDATE - 18 December 2024</div>
+        <p style="color:#fff;font-size:14px;line-height:1.8;margin-bottom:8px">⚠️ <strong>IMPORTANT:</strong> This is a new KYC update. All users must complete verification.</p>
+        <p style="color:#fff;font-size:14px;line-height:1.8;margin-bottom:8px">⏰ Complete KYC within <strong style="color:#ffd700">48 hours</strong> from 18 December 2024.</p>
+        <p style="color:#fff;font-size:14px;line-height:1.8">🚫 Withdrawals are <strong style="color:#ff4444">disabled</strong> until KYC is completed.</p>
+      </div>
+
+      <div id="kycStatus" style="display:none;background:rgba(76,175,80,0.15);border:3px solid rgba(76,175,80,0.4);padding:20px;border-radius:12px;margin-bottom:18px;text-align:center">
+        <h3 style="color:#4CAF50;margin-bottom:10px;font-size:20px">✅ Successfully KYC Completed</h3>
+        <p style="color:#4CAF50;font-weight:700;font-size:16px">Your account is now verified!</p>
+        <p style="color:#fff;font-size:14px;margin-top:10px">You can now make withdrawals without any restrictions.</p>
+      </div>
+
+      <div id="kycForm">
+        <div class="input-box">
+          <label>👤 Full Name</label>
+          <input type="text" id="kycFullName" placeholder="Enter your full name" />
+        </div>
+
+        <div class="input-box">
+          <label>🆔 ID Card Number</label>
+          <input type="text" id="kycIdNumber" placeholder="Enter your ID card number" />
+        </div>
+
+        <div class="input-box">
+          <label>📸 ID Card Screenshot</label>
+          <input id="kycIdScreenshot" type="file" accept="image/*" onchange="handleKycIdUpload(event)" />
+          <div class="note">Upload a clear photo of your ID card</div>
+        </div>
+
+        <div id="kycIdPreview" class="screenshot-preview" style="display:none">
+          <img id="kycIdImg" src="" alt="ID Card" />
+        </div>
+
+        <div class="input-box">
+          <label>🤳 Face Screenshot or Image</label>
+          <input id="kycFaceScreenshot" type="file" accept="image/*" onchange="handleKycFaceUpload(event)" />
+          <div class="note">Upload a clear photo of your face (selfie)</div>
+        </div>
+
+        <div id="kycFacePreview" class="screenshot-preview" style="display:none">
+          <img id="kycFaceImg" src="" alt="Face Photo" />
+        </div>
+
+        <div class="input-box">
+          <label>📍 Address</label>
+          <input type="text" id="kycAddress" placeholder="Enter your full address" />
+        </div>
+
+        <button class="primary-btn" onclick="submitKYC()">✅ Submit KYC</button>
+        <div id="kycMessage" class="muted" style="margin-top:12px"></div>
+      </div>
+
+      <div style="margin-top:18px">
+        <button class="btn" onclick="showPage('dashboard')">Back to Dashboard</button>
+      </div>
     </div>
   </div>
 
@@ -1670,6 +1745,17 @@
     let amount = parseFloat(document.getElementById("amount").value);
     let message = document.getElementById("message");
 
+    // Check KYC status first
+    let mobile = localStorage.getItem("currentUser");
+    if(mobile){
+      let user = JSON.parse(localStorage.getItem("user_" + mobile));
+      if(!user.kycCompleted){
+        message.innerText = "❌ KYC verification required! Please complete KYC before withdrawal.";
+        message.style.color = "#ff4444";
+        return;
+      }
+    }
+
     if(!method || !address || isNaN(amount)){
       message.innerText = "❌ Please fill all fields";
       message.style.color = "#ff4444";
@@ -1886,6 +1972,181 @@
       alert('❌ No withdrawal record found for "' + nameInput + '"');
     }
   }
+
+  // ==================== KYC FUNCTIONS ====================
+  function handleKycIdUpload(evt){
+    const file = evt.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        document.getElementById('kycIdImg').src = e.target.result;
+        document.getElementById('kycIdPreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function handleKycFaceUpload(evt){
+    const file = evt.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        document.getElementById('kycFaceImg').src = e.target.result;
+        document.getElementById('kycFacePreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function submitKYC(){
+    const fullName = document.getElementById('kycFullName').value.trim();
+    const idNumber = document.getElementById('kycIdNumber').value.trim();
+    const address = document.getElementById('kycAddress').value.trim();
+    const idScreenshot = document.getElementById('kycIdScreenshot').files[0];
+    const faceScreenshot = document.getElementById('kycFaceScreenshot').files[0];
+    const message = document.getElementById('kycMessage');
+
+    // Validation
+    if(!fullName){
+      message.innerText = '❌ Please enter your full name';
+      message.className = 'error';
+      return;
+    }
+
+    if(!idNumber){
+      message.innerText = '❌ Please enter your ID card number';
+      message.className = 'error';
+      return;
+    }
+
+    if(!idScreenshot){
+      message.innerText = '❌ Please upload your ID card screenshot';
+      message.className = 'error';
+      return;
+    }
+
+    if(!faceScreenshot){
+      message.innerText = '❌ Please upload your face photo';
+      message.className = 'error';
+      return;
+    }
+
+    if(!address){
+      message.innerText = '❌ Please enter your address';
+      message.className = 'error';
+      return;
+    }
+
+    const mobile = localStorage.getItem('currentUser');
+    if(!mobile){
+      alert('Not logged in');
+      return;
+    }
+
+    const uStr = localStorage.getItem('user_' + mobile);
+    if(!uStr){
+      alert('User data missing');
+      return;
+    }
+
+    const user = JSON.parse(uStr);
+    
+    // Store KYC submission time
+    const kycSubmitTime = Date.now();
+    user.kycSubmitTime = kycSubmitTime;
+    user.kycData = {
+      fullName: fullName,
+      idNumber: idNumber,
+      address: address,
+      submitDate: new Date().toISOString()
+    };
+    localStorage.setItem('user_' + mobile, JSON.stringify(user));
+
+    message.innerText = '✅ KYC submitted successfully! Your verification will be completed within 48 hours.';
+    message.className = 'success';
+
+    // Auto-approve after 48 hours (simulate review process)
+    setTimeout(function(){
+      checkKYCApproval();
+    }, 2000); // Check immediately for demo, but in real app would be 48 hours
+
+    // For demo purposes, auto-approve after 5 seconds
+    setTimeout(function(){
+      const mobile = localStorage.getItem('currentUser');
+      if(mobile){
+        const user = JSON.parse(localStorage.getItem('user_' + mobile));
+        user.kycCompleted = true;
+        localStorage.setItem('user_' + mobile, JSON.stringify(user));
+        
+        // Show success status
+        document.getElementById('kycForm').style.display = 'none';
+        document.getElementById('kycStatus').style.display = 'block';
+        
+        alert('✅ Successfully KYC Completed! You can now make withdrawals.');
+      }
+    }, 5000);
+  }
+
+  function checkKYCApproval(){
+    const mobile = localStorage.getItem('currentUser');
+    if(!mobile) return;
+
+    const user = JSON.parse(localStorage.getItem('user_' + mobile));
+    if(!user || !user.kycSubmitTime) return;
+
+    const now = Date.now();
+    const timePassed = now - user.kycSubmitTime;
+    const HOURS_48 = 48 * 60 * 60 * 1000;
+
+    // If 48 hours passed, auto-approve
+    if(timePassed >= HOURS_48 && !user.kycCompleted){
+      user.kycCompleted = true;
+      localStorage.setItem('user_' + mobile, JSON.stringify(user));
+      
+      // Show success status if on KYC page
+      if(document.getElementById('kyc').style.display === 'flex'){
+        document.getElementById('kycForm').style.display = 'none';
+        document.getElementById('kycStatus').style.display = 'block';
+        alert('✅ Successfully KYC Completed! Your verification has been approved.');
+      }
+    }
+  }
+
+  // Check KYC status when loading KYC page
+  function loadKYCPage(){
+    const mobile = localStorage.getItem('currentUser');
+    if(!mobile) return;
+
+    const user = JSON.parse(localStorage.getItem('user_' + mobile));
+    if(!user) return;
+
+    if(user.kycCompleted){
+      document.getElementById('kycForm').style.display = 'none';
+      document.getElementById('kycStatus').style.display = 'block';
+    } else {
+      document.getElementById('kycForm').style.display = 'block';
+      document.getElementById('kycStatus').style.display = 'none';
+      checkKYCApproval(); // Check if 48 hours passed
+    }
+  }
+
+  // Modify existing showPage function to handle KYC page loading
+  const originalShowPageFunc = showPage;
+  showPage = function(id){
+    document.querySelectorAll('.page-section').forEach(s=>s.style.display='none');
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'flex';
+    
+    if(id === 'dashboard'){
+      showNotification();
+    }
+    
+    if(id === 'recharge') generateQRCode();
+    if(id === 'team') loadTeamPage();
+    if(id === 'withdraw') updateWithdrawBalance();
+    if(id === 'kyc') loadKYCPage();
+  };
 </script>
 </body>
 </html>
+
